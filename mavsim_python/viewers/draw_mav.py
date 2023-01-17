@@ -88,15 +88,40 @@ class DrawMav:
         """
         ##### TODO #####
         # define MAV body parameters
-        #fuse_h = 
+        fuse_h = 0.5
+        fuse_w = 0.5
+        fuse_l1 = 2
+        fuse_l2 = 1
+        fuse_l3 = 3
+        wing_l = 1
+        wing_w = 4
+        tail_h = 0.5
+        tailwing_l = 0.5
+        tailwing_w = 2
 
         # Define the points on the aircraft following diagram Fig 2.14
         # points are in NED coordinates
         ##### TODO #####
-        points = np.array([[0, 0, 0],  # point 1 [0]
-                           [1, 1, 1],  # point 2 [1]
-                           [1, 1, 0],  # point 3 [2]
-                           ]).T
+        # points = np.array([[0, 0, 0],  # point 1 [0]
+        #                    [1, 1, 1],  # point 2 [1]
+        #                    [1, 1, 0],  # point 3 [2]
+        #                    ]).T
+        points = np.array([[fuse_l1, 0, 0],                             # point 1 [0]
+                           [fuse_l2, fuse_w / 2, -fuse_h / 2],          # point 2 [1]
+                           [fuse_l2, -fuse_w / 2, -fuse_h / 2],         # point 3 [2]
+                           [fuse_l2, -fuse_w / 2, fuse_h / 2],          # point 4 [3]
+                           [fuse_l2, fuse_w / 2, fuse_h / 2],           # point 5 [4]
+                           [-fuse_l3, 0, 0],                            # point 6 [5]
+                           [0, wing_w / 2, 0],                          # point 7 [6]
+                           [-wing_l, wing_w / 2, 0],                    # point 8 [7]
+                           [-wing_l, -wing_w / 2, 0],                   # point 9 [8]
+                           [0, -wing_w / 2, 0],                         # point 10 [9]
+                           [-fuse_l3 + tailwing_l, tailwing_w / 2, 0],  # point 11 [10]
+                           [-fuse_l3, tailwing_w / 2, 0],               # point 12 [11]
+                           [-fuse_l3, -tailwing_w / 2, 0],              # point 13 [12]
+                           [-fuse_l3 + tailwing_l, -tailwing_w / 2, 0], # point 14 [13]
+                           [-fuse_l3 + tailwing_l, 0, 0],               # point 15 [14]
+                           [-fuse_l3, 0, -tail_h]]).T                   # point 16 [15]
 
         # scale points for better rendering
         scale = 20
@@ -111,7 +136,19 @@ class DrawMav:
 
         # Assign colors for each mesh section
         ##### TODO #####
-        meshColors[0] = yellow # nose-top
+        meshColors[0] = blue    # nose-top
+        meshColors[1] = blue    # nose-side
+        meshColors[2] = blue    # nose-bottom
+        meshColors[3] = blue    # nose-side
+        meshColors[4] = red     # body-top
+        meshColors[5] = red     # body-side
+        meshColors[6] = red     # body-bottom
+        meshColors[7] = red     # body-side
+        meshColors[8] = green   # wing
+        meshColors[9] = green   # wing
+        meshColors[10] = green  # tailwing
+        meshColors[11] = green  # tailwing
+        meshColors[12] = blue   # tail
 
         return points, meshColors
 
@@ -125,6 +162,18 @@ class DrawMav:
 
         #Define each section of the mesh with 3 points
         ##### TODO #####
-        mesh = np.array([[points[0], points[1], points[2]]]) # nose-top
+        mesh = np.array([[points[0], points[1], points[2]],     # nose-top
+                         [points[0], points[2], points[3]],     # nose-side
+                         [points[0], points[3], points[4]],     # nose-bottom
+                         [points[0], points[4], points[1]],     # nose-side
+                         [points[5], points[1], points[2]],     # body-top
+                         [points[5], points[2], points[3]],     # body-side
+                         [points[5], points[3], points[4]],     # body-bottom
+                         [points[5], points[4], points[1]],     # body-side
+                         [points[6], points[7], points[8]],     # wing
+                         [points[6], points[8], points[9]],     # wing
+                         [points[10], points[11], points[12]],  # tailwing
+                         [points[10], points[12], points[13]],  # tailwing
+                         [points[14], points[15], points[5]]])  # tail
 
         return mesh
