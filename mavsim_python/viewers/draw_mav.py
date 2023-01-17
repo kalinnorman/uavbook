@@ -86,8 +86,7 @@ class DrawMav:
             Points that define the mav, and the colors of the triangular mesh
             Define the points on the aircraft following diagram in Figure C.3
         """
-        ##### TODO #####
-        # define MAV body parameters
+        # Define MAV body parameters
         fuse_h = 0.5
         fuse_w = 0.5
         fuse_l1 = 2
@@ -101,11 +100,6 @@ class DrawMav:
 
         # Define the points on the aircraft following diagram Fig 2.14
         # points are in NED coordinates
-        ##### TODO #####
-        # points = np.array([[0, 0, 0],  # point 1 [0]
-        #                    [1, 1, 1],  # point 2 [1]
-        #                    [1, 1, 0],  # point 3 [2]
-        #                    ]).T
         points = np.array([[fuse_l1, 0, 0],                             # point 1 [0]
                            [fuse_l2, fuse_w / 2, -fuse_h / 2],          # point 2 [1]
                            [fuse_l2, -fuse_w / 2, -fuse_h / 2],         # point 3 [2]
@@ -123,11 +117,11 @@ class DrawMav:
                            [-fuse_l3 + tailwing_l, 0, 0],               # point 15 [14]
                            [-fuse_l3, 0, -tail_h]]).T                   # point 16 [15]
 
-        # scale points for better rendering
+        # Scale points for better rendering
         scale = 20
         points = scale * points
 
-        #   define the colors for each face of triangular mesh
+        # Define the colors for each face of triangular mesh
         red = np.array([1., 0., 0., 1])
         green = np.array([0., 1., 0., 1])
         blue = np.array([0., 0., 1., 1])
@@ -135,7 +129,6 @@ class DrawMav:
         meshColors = np.empty((13, 3, 4), dtype=np.float32)
 
         # Assign colors for each mesh section
-        ##### TODO #####
         meshColors[0] = blue    # nose-top
         meshColors[1] = blue    # nose-side
         meshColors[2] = blue    # nose-bottom
@@ -160,8 +153,7 @@ class DrawMav:
         """
         points = points.T
 
-        #Define each section of the mesh with 3 points
-        ##### TODO #####
+        # Define each section of the mesh with 3 points
         mesh = np.array([[points[0], points[1], points[2]],     # nose-top
                          [points[0], points[2], points[3]],     # nose-side
                          [points[0], points[3], points[4]],     # nose-bottom
