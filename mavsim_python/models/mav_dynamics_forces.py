@@ -89,8 +89,7 @@ class MavDynamics:
         """
         for the dynamics xdot = f(x, u), returns f(x, u)
         """
-        ##### TODO #####
-        
+                
         # Extract the States
         # north = state.item(0)
         pn = state.item(0)
