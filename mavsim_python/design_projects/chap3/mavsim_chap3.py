@@ -40,7 +40,7 @@ delta = MsgDelta()
 
 # initialize the simulation time
 sim_time = SIM.start_time
-end_time = 60
+end_time = 20
 
 # main simulation loop
 print("Press Command-Q to exit...")
