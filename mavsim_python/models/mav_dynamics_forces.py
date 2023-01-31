@@ -93,28 +93,57 @@ class MavDynamics:
         
         # Extract the States
         # north = state.item(0)
+        pn = state.item(0)
+        pe = state.item(1)
+        pd = state.item(2)
+        u = state.item(3)
+        v = state.item(4)
+        w = state.item(5)
+        e0 = state.item(6)
+        e1 = state.item(7)
+        e2 = state.item(8)
+        e3 = state.item(9)
+        p = state.item(10)
+        q = state.item(11)
+        r = state.item(12)
 
         # Extract Forces/Moments
-        # fx = forces_moments.item(0)
+        fx = forces_moments.item(0)
+        fy = forces_moments.item(1)
+        fz = forces_moments.item(2)
+        l = forces_moments.item(3)
+        m = forces_moments.item(4)
+        n = forces_moments.item(5)
 
         # Position Kinematics
-        # pos_dot = 
+        phi = np.arctan2(2 * (e0 * e1 + e2 * e3), e0**2 + e3**2 - e1**2 - e2**2)
+        theta = np.arcsin(2 * (e0 * e2 - e1 * e3))
+        psi = np.arctan2(2 * (e0 * e3 + e1 * e2), e0**2 + e1**2 - e2**2 - e3**2)
+        pos_dot = np.array([[np.cos(theta) * np.cos(psi), np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(theta) * np.sin(psi), np.cos(phi) * np.sin(theta) * np.cos(psi) + np.sin(phi) * np.sin(psi)],
+                            [np.cos(theta) * np.sin(psi), np.sin(phi) * np.sin(theta) * np.sin(psi) + np.cos(theta) * np.cos(psi), np.cos(phi) * np.sin(theta) * np.sin(psi) - np.sin(phi) * np.cos(psi)],
+                            [-np.sin(theta), np.sin(phi) * np.cos(theta), np.cos(phi) * np.cos(theta)]]) @ \
+                  np.array([[u, v, w]]).T
+        pos_dot = pos_dot.flatten()
 
         # Position Dynamics
-        # u_dot = 
+        u_dot = np.array([[r * v - q * w, p * w - r * u, q * u - p * v]]).T + (1 / MAV.mass) * np.array([[fx, fy, fz]]).T
+        u_dot = u_dot.flatten()
 
 
         # rotational kinematics
-        # e0_dot =
+        e0_dot = 0.5 * np.array([[0, -p, -q, -r], [p, 0, r, -q], [q, -r, 0, p], [r, q, -p, 0]]) @ np.array([[e0, e1, e2, e3]]).T
+        e0_dot = e0_dot.flatten()
 
 
         # rotatonal dynamics
-        # p_dot = 
+        p_dot = np.array([[MAV.gamma1 * p * q - MAV.gamma2 * q * r, MAV.gamma5 * p * r - MAV.gamma6 * (p**2 - r**2), MAV.gamma7 * p * q - MAV.gamma1 * q * r]]).T + \
+                np.array([[MAV.gamma3 * l + MAV.gamma4 * n, 1 / MAV.Jy * m, MAV.gamma4 * l + MAV.gamma8 * n]]).T
+        p_dot = p_dot.flatten()
         
 
         # collect the derivative of the states
-        # x_dot = np.array([[north_dot, east_dot,... ]]).T
-        x_dot = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0]]).T
+        x_dot = np.array([[pos_dot[0], pos_dot[1], pos_dot[2], u_dot[0], u_dot[1], u_dot[2], e0_dot[0], e0_dot[1], e0_dot[2], e0_dot[3], p_dot[0], p_dot[1], p_dot[2]]]).T
+        # x_dot = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0]]).T
         return x_dot
 
     def _update_true_state(self):
