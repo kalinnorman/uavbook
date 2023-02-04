@@ -89,9 +89,7 @@ class MavDynamics:
         """
         for the dynamics xdot = f(x, u), returns f(x, u)
         """
-                
         # Extract the States
-        # north = state.item(0)
         pn = state.item(0)
         pe = state.item(1)
         pd = state.item(2)
@@ -115,34 +113,20 @@ class MavDynamics:
         n = forces_moments.item(5)
 
         # Position Kinematics
-        phi = np.arctan2(2 * (e0 * e1 + e2 * e3), e0**2 + e3**2 - e1**2 - e2**2)
-        theta = np.arcsin(2 * (e0 * e2 - e1 * e3))
-        psi = np.arctan2(2 * (e0 * e3 + e1 * e2), e0**2 + e1**2 - e2**2 - e3**2)
-        pos_dot = np.array([[np.cos(theta) * np.cos(psi), np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(theta) * np.sin(psi), np.cos(phi) * np.sin(theta) * np.cos(psi) + np.sin(phi) * np.sin(psi)],
-                            [np.cos(theta) * np.sin(psi), np.sin(phi) * np.sin(theta) * np.sin(psi) + np.cos(theta) * np.cos(psi), np.cos(phi) * np.sin(theta) * np.sin(psi) - np.sin(phi) * np.cos(psi)],
-                            [-np.sin(theta), np.sin(phi) * np.cos(theta), np.cos(phi) * np.cos(theta)]]) @ \
-                  np.array([[u, v, w]]).T
-        pos_dot = pos_dot.flatten()
+        pos_dot = Quaternion2Rotation(state[6:10]) @ state[3:6]
 
         # Position Dynamics
         u_dot = np.array([[r * v - q * w, p * w - r * u, q * u - p * v]]).T + (1 / MAV.mass) * np.array([[fx, fy, fz]]).T
-        u_dot = u_dot.flatten()
-
 
         # rotational kinematics
         e0_dot = 0.5 * np.array([[0, -p, -q, -r], [p, 0, r, -q], [q, -r, 0, p], [r, q, -p, 0]]) @ np.array([[e0, e1, e2, e3]]).T
-        e0_dot = e0_dot.flatten()
-
 
         # rotatonal dynamics
         p_dot = np.array([[MAV.gamma1 * p * q - MAV.gamma2 * q * r, MAV.gamma5 * p * r - MAV.gamma6 * (p**2 - r**2), MAV.gamma7 * p * q - MAV.gamma1 * q * r]]).T + \
                 np.array([[MAV.gamma3 * l + MAV.gamma4 * n, 1 / MAV.Jy * m, MAV.gamma4 * l + MAV.gamma8 * n]]).T
-        p_dot = p_dot.flatten()
-        
 
         # collect the derivative of the states
-        x_dot = np.array([[pos_dot[0], pos_dot[1], pos_dot[2], u_dot[0], u_dot[1], u_dot[2], e0_dot[0], e0_dot[1], e0_dot[2], e0_dot[3], p_dot[0], p_dot[1], p_dot[2]]]).T
-        # x_dot = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0]]).T
+        x_dot = np.array([[pos_dot.item(0), pos_dot.item(1), pos_dot.item(2), u_dot.item(0), u_dot.item(1), u_dot.item(2), e0_dot.item(0), e0_dot.item(1), e0_dot.item(2), e0_dot.item(3), p_dot.item(0), p_dot.item(1), p_dot.item(2)]]).T
         return x_dot
 
     def _update_true_state(self):
