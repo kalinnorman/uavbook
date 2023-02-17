@@ -85,7 +85,7 @@ def compute_model(mav, trim_state, trim_input):
     file.close()
 
 
-def compute_tf_model(mav, trim_state, trim_input):
+def compute_tf_model(mav, trim_state, trim_input: MsgDelta):
     # trim values
     mav._state = trim_state
     mav._update_velocity_data()
@@ -95,16 +95,19 @@ def compute_tf_model(mav, trim_state, trim_input):
 
     ###### TODO ######
     # define transfer function constants
-    a_phi1 = 0
-    a_phi2 = 0
-    a_theta1 = 0
-    a_theta2 = 0
-    a_theta3 = 0
+    # See equations 5.23 and 5.24 in the text (pg 75) -- For Va do I put in Va_trim??
+    a_phi1 = -0.5 * MAV.rho * Va_trim**2 * MAV.S_wing * MAV.b * MAV.C_p_p * MAV.b / (2 * Va_trim)
+    a_phi2 = 0.5 * MAV.rho * Va_trim**2 * MAV.S_wing * MAV.b * MAV.C_p_delta_a
+    # See above equation 5.29 in the text (pg 79)
+    a_theta1 = -0.5 * MAV.rho * Va_trim**2 * MAV.c * MAV.S_wing * MAV.C_m_q * MAV.c / (2 * MAV.Jy * Va_trim)
+    a_theta2 = -0.5 * MAV.rho * Va_trim**2 * MAV.c * MAV.S_wing * MAV.C_m_alpha / MAV.Jy
+    a_theta3 = 0.5 * MAV.rho * Va_trim**2 * MAV.c * MAV.S_wing * MAV.C_m_delta_e / MAV.Jy
 
     # Compute transfer function coefficients using new propulsion model
-    a_V1 = 0
-    a_V2 = 0
-    a_V3 = 0
+    ## See below equation 5.36 in the text (pg 83)
+    a_V1 = MAV.rho * Va_trim * MAV.S_wing / MAV.mass * (MAV.C_D_0 + MAV.C_D_alpha * alpha_trim + MAV.C_D_delta_e * trim_input.elevator) - 1 / MAV.mass * dT_dVa(mav, Va_trim, trim_input.throttle)
+    a_V2 = 1 / MAV.mass * dT_ddelta_t(mav, Va_trim, trim_input.throttle)
+    a_V3 = MAV.gravity * np.cos(theta_trim - alpha_trim)
 
     return Va_trim, alpha_trim, theta_trim, a_phi1, a_phi2, a_theta1, a_theta2, a_theta3, a_V1, a_V2, a_V3
 
@@ -116,29 +119,47 @@ def compute_ss_model(mav, trim_state, trim_input):
     A = df_dx(mav, x_euler, trim_input)
     B = df_du(mav, x_euler, trim_input)
     # extract longitudinal states (u, w, q, theta, pd)
-    A_lon = np.zeros((5,5))
-    B_lon = np.zeros((5,2))
+    E1 = np.array([[0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                   [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                   [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                   [0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+    E2 = np.array([[1, 0, 0, 0],
+                   [0, 0, 0, 1]])
+    A_lon = E1 @ A @ E1.T
+    B_lon = E1 @ B @ E2.T
     # change pd to h
 
     # extract lateral states (v, p, r, phi, psi)
-    A_lat = np.zeros((5,5))
-    B_lat = np.zeros((5,2))
+    E3 = np.array([[0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                   [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
+    E4 = np.array([[0, 1, 0, 0],
+                   [0, 0, 1, 0]])
+    A_lat = E3 @ A @ E3.T
+    B_lat = E3 @ B @ E4.T
     return A_lon, B_lon, A_lat, B_lat
 
 def euler_state(x_quat):
     # convert state x with attitude represented by quaternion
     # to x_euler with attitude represented by Euler angles
     
-    ##### TODO #####
     x_euler = np.zeros((12,1))
+    x_euler[0:6] = np.copy(x_quat[0:6])
+    x_euler[6:9, 0] = Quaternion2Euler(np.copy(x_quat[6:10]))
+    x_euler[9:12] = np.copy(x_quat[10:13])
     return x_euler
 
 def quaternion_state(x_euler):
     # convert state x_euler with attitude represented by Euler angles
     # to x_quat with attitude represented by quaternions
 
-    ##### TODO #####
     x_quat = np.zeros((13,1))
+    x_quat[0:6] = np.copy(x_euler[0:6])
+    x_quat[6:10] = Euler2Quaternion(*x_euler[6:9].squeeze())
+    x_quat[10:13] = np.copy(x_euler[9:12])
     return x_quat
 
 def f_euler(mav, x_euler, delta):
@@ -153,16 +174,35 @@ def f_euler(mav, x_euler, delta):
     mav._state = x_quat
     mav._update_velocity_data()
     ##### TODO #####
+    if isinstance(delta, np.ndarray):
+        delta = MsgDelta(delta.item(0), delta.item(1), delta.item(2), delta.item(3))
+    dquat_dt = mav._derivatives(x_quat, mav._forces_moments(delta))
     f_euler_ = np.zeros((12,1))
-
+    temp = np.zeros((12, 13))
+    eps = 0.001
+    f_at_x = euler_state(x_quat)
+    for i in range(13):
+        eps_state = np.copy(mav._state)
+        eps_state[i, 0] += eps
+        f_at_eps = euler_state(eps_state)
+        df_dq = (f_at_eps - f_at_x) / eps
+        temp[:, i] = df_dq[:, 0]
+    f_euler_ = temp @ dquat_dt
     return f_euler_
 
 def df_dx(mav, x_euler, delta):
     # take partial of f_euler with respect to x_euler
     eps = 0.01  # deviation
 
-    ##### TODO #####
     A = np.zeros((12, 12))  # Jacobian of f wrt x
+    # See slide 48 of chap 5
+    f_at_x = f_euler(mav, x_euler, delta)
+    for i in range(0, 12):
+        x_eps = np.copy(x_euler)
+        x_eps[i][0] += eps # add eps to i th s ta te
+        f_at_x_eps = f_euler(mav, x_eps, delta)
+        df_dxi = (f_at_x_eps - f_at_x ) / eps
+        A[:, i] = df_dxi[:, 0]
     return A
 
 
@@ -170,8 +210,16 @@ def df_du(mav, x_euler, delta):
     # take partial of f_euler with respect to input
     eps = 0.01  # deviation
 
-    ##### TODO #####
     B = np.zeros((12, 4))  # Jacobian of f wrt u
+    delta = delta.to_array()[:4, :]
+    # See slide 48 of chap 5
+    f_at_u = f_euler(mav, x_euler, delta)
+    for i in range(0, 4):
+        u_eps = np.copy(delta)
+        u_eps[i][0] += eps # add eps to i th s ta te
+        f_at_u_eps = f_euler(mav, x_euler, u_eps)
+        df_dui = (f_at_u_eps - f_at_u) / eps
+        B[:, i] = df_dui[:, 0]
     return B
 
 
@@ -179,14 +227,20 @@ def dT_dVa(mav, Va, delta_t):
     # returns the derivative of motor thrust with respect to Va
     eps = 0.01
 
-    ##### TODO #####
     dT_dVa = 0
+    T_at_Va = mav._motor_thrust_torque(Va, delta_t)[0]
+    Va_eps = Va + eps
+    T_at_Va_eps = mav._motor_thrust_torque(Va_eps, delta_t)[0]
+    dT_dVa = (T_at_Va_eps - T_at_Va) / eps
     return dT_dVa
 
 def dT_ddelta_t(mav, Va, delta_t):
     # returns the derivative of motor thrust with respect to delta_t
     eps = 0.01
 
-    ##### TODO #####
     dT_ddelta_t = 0
+    T_at_delta_t = mav._motor_thrust_torque(Va, delta_t)[0]
+    delta_t_eps = delta_t + eps
+    T_at_delta_t_eps = mav._motor_thrust_torque(Va, delta_t_eps)[0]
+    dT_ddelta_t = (T_at_delta_t_eps - T_at_delta_t) / eps
     return dT_ddelta_t
