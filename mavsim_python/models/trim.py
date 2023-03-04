@@ -10,32 +10,28 @@ import numpy as np
 from scipy.optimize import minimize
 from tools.rotations import Euler2Quaternion
 from message_types.msg_delta import MsgDelta
-import time
 
 def compute_trim(mav, Va, gamma):
     # define initial state and input
-
     # set the initial conditions of the optimization
     e0 = Euler2Quaternion(0., gamma, 0.)
-    state0 = np.array([[0],  # pn
-                   [0],  # pe
-                   [-40],  # pd
-                   [25.],  # u
-                   [0.], # v
-                   [0.], # w
-                   [1],  # e0
-                   [0],  # e1
-                   [0],  # e2
-                   [0],  # e3
-                   [0.], # p
-                   [0.], # q
-                   [0.]  # r
+    state0 = np.array([[mav._state.item(0)],  # pn
+                   [mav._state.item(1)],  # pe
+                   [mav._state.item(2)],  # pd
+                   [mav._Va],  # u
+                   [0.],  # v
+                   [0.],  # w
+                   [e0.item(0)],  # e0
+                   [e0.item(1)],  # e1
+                   [e0.item(2)],  # e2
+                   [e0.item(3)],  # e3
+                   [0.],  # p
+                   [0.],  # q
+                   [0.]   # r
                    ])
-    delta0 = np.array([[0],  # elevator
-                       [0],  # aileron
-                       [0],  # rudder
-                       [0]]) # throttle
-    x0 = np.concatenate((state0, delta0), axis=0)
+    delta0 = MsgDelta(elevator=0., aileron=0., rudder=0., throttle=0.5)
+    print("delta0.to_array()[0:4]: " , delta0.to_array()[0:4])
+    x0 = np.concatenate((state0, delta0.to_array()[0:4]), axis=0)
     # define equality constraints
     cons = ({'type': 'eq',
              'fun': lambda x: np.array([
@@ -77,14 +73,18 @@ def compute_trim(mav, Va, gamma):
 
 def trim_objective_fun(x, mav, Va, gamma):
     # objective function to be minimized
-    x = x[:, np.newaxis]
-    state = x[:13]
-    delta = MsgDelta(elevator=x.item(13), aileron=x.item(14), rudder=x.item(15), throttle=x.item(16))
+    state = np.reshape(x[0:13], (13, 1))
+    delta = MsgDelta(elevator=x.item(13),
+                     aileron=x.item(14),
+                     rudder=x.item(15),
+                     throttle=x.item(16))
     desired_trim_state_dot = np.array([[0., 0., -Va*np.sin(gamma), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]).T
-    mav._state = state
+    mav._state[0:13] = state
+    mav._state[13,0] = 0
+    mav._state[14,0] = 0
     mav._update_velocity_data()
     forces_moments = mav._forces_moments(delta)
     f = mav._derivatives(state, forces_moments)
     tmp = desired_trim_state_dot - f
-    J = np.linalg.norm(tmp[2:13])**2
+    J = np.linalg.norm(tmp[2:13])**2.0
     return J

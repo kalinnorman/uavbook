@@ -14,7 +14,6 @@ import numpy as np
 
 # load message types
 from message_types.msg_state import MsgState
-from message_types.msg_delta import MsgDelta
 import parameters.aerosonde_parameters as MAV
 from tools.rotations import Quaternion2Rotation, Quaternion2Euler, Euler2Rotation
 
@@ -89,10 +88,10 @@ class MavDynamics:
         """
         for the dynamics xdot = f(x, u), returns f(x, u)
         """
-        # Extract the States
-        pn = state.item(0)
-        pe = state.item(1)
-        pd = state.item(2)
+        # extract the states
+        # north = state.item(0)
+        # east = state.item(1)
+        # down = state.item(2)
         u = state.item(3)
         v = state.item(4)
         w = state.item(5)
@@ -103,8 +102,7 @@ class MavDynamics:
         p = state.item(10)
         q = state.item(11)
         r = state.item(12)
-
-        # Extract Forces/Moments
+        #   extract forces/moments
         fx = forces_moments.item(0)
         fy = forces_moments.item(1)
         fz = forces_moments.item(2)
@@ -112,21 +110,31 @@ class MavDynamics:
         m = forces_moments.item(4)
         n = forces_moments.item(5)
 
-        # Position Kinematics
+        # position kinematics
         pos_dot = Quaternion2Rotation(state[6:10]) @ state[3:6]
+        north_dot = pos_dot.item(0)
+        east_dot = pos_dot.item(1)
+        down_dot = pos_dot.item(2)
 
-        # Position Dynamics
-        u_dot = np.array([[r * v - q * w, p * w - r * u, q * u - p * v]]).T + (1 / MAV.mass) * np.array([[fx, fy, fz]]).T
+        # position dynamics
+        u_dot = r*v - q*w + fx/MAV.mass
+        v_dot = p*w - r*u + fy/MAV.mass
+        w_dot = q*u - p*v + fz/MAV.mass
 
         # rotational kinematics
-        e0_dot = 0.5 * np.array([[0, -p, -q, -r], [p, 0, r, -q], [q, -r, 0, p], [r, q, -p, 0]]) @ np.array([[e0, e1, e2, e3]]).T
+        e0_dot = 0.5 * (-p*e1 - q*e2 - r*e3)
+        e1_dot = 0.5 * (p*e0 + r*e2 - q*e3)
+        e2_dot = 0.5 * (q*e0 - r*e1 + p*e3)
+        e3_dot = 0.5 * (r*e0 + q*e1 -p*e2)
 
         # rotatonal dynamics
-        p_dot = np.array([[MAV.gamma1 * p * q - MAV.gamma2 * q * r, MAV.gamma5 * p * r - MAV.gamma6 * (p**2 - r**2), MAV.gamma7 * p * q - MAV.gamma1 * q * r]]).T + \
-                np.array([[MAV.gamma3 * l + MAV.gamma4 * n, 1 / MAV.Jy * m, MAV.gamma4 * l + MAV.gamma8 * n]]).T
+        p_dot = MAV.gamma1*p*q - MAV.gamma2*q*r + MAV.gamma3*l + MAV.gamma4*n
+        q_dot = MAV.gamma5*p*r - MAV.gamma6*(p**2-r**2) + m/MAV.Jy
+        r_dot = MAV.gamma7*p*q - MAV.gamma1*q*r + MAV.gamma4*l + MAV.gamma8*n
 
         # collect the derivative of the states
-        x_dot = np.array([[pos_dot.item(0), pos_dot.item(1), pos_dot.item(2), u_dot.item(0), u_dot.item(1), u_dot.item(2), e0_dot.item(0), e0_dot.item(1), e0_dot.item(2), e0_dot.item(3), p_dot.item(0), p_dot.item(1), p_dot.item(2)]]).T
+        x_dot = np.array([[north_dot, east_dot, down_dot, u_dot, v_dot, w_dot,
+                           e0_dot, e1_dot, e2_dot, e3_dot, p_dot, q_dot, r_dot]]).T
         return x_dot
 
     def _update_true_state(self):

@@ -46,7 +46,7 @@ delta = MsgDelta()
 
 # initialize the simulation time
 sim_time = SIM.start_time
-end_time = 20
+end_time = 60
 
 # main simulation loop
 print("Press 'Esc' to exit...")
