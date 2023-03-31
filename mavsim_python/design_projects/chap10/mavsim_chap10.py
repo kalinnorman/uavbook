@@ -53,8 +53,8 @@ path_follower = PathFollower()
 # path definition
 from message_types.msg_path import MsgPath
 path = MsgPath()
-path.type = 'line'
-#path.type = 'orbit'
+# path.type = 'line'
+path.type = 'orbit'
 if path.type == 'line':
     path.line_origin = np.array([[0.0, 0.0, -100.0]]).T
     path.line_direction = np.array([[0.5, 1.0, 0.0]]).T
@@ -74,10 +74,11 @@ while sim_time < end_time:
     # -------observer-------------
     measurements = mav.sensors()  # get sensor measurements
     estimated_state = observer.update(measurements)  # estimate states from measurements
+    estimated_state = mav.true_state
 
     # -------path follower-------------
     autopilot_commands = path_follower.update(path, estimated_state)
-    #autopilot_commands = path_follower.update(path, mav.true_state)  # for debugging
+    # autopilot_commands = path_follower.update(path, mav.true_state)  # for debugging
 
     # -------autopilot-------------
     delta, commanded_state = autopilot.update(autopilot_commands, estimated_state)
