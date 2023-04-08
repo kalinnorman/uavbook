@@ -270,7 +270,11 @@ class EkfPosition:
         h = self.h_pseudo(self.xhat, measurement, state)
         C = jacobian(self.h_pseudo, self.xhat, measurement, state)
         y = np.array([[0, 0]]).T
-        S_inv = np.linalg.inv(self.R_pseudo + C @ self.P @ C.T)
+        try:
+            S_inv = np.linalg.inv(self.R_pseudo + C @ self.P @ C.T)
+            self.S_inv_prev = S_inv
+        except:
+            S_inv = self.S_inv_prev
         if (y-h).T @ S_inv @ (y-h) < self.pseudo_threshold:
             L = self.P @ C.T @ S_inv
             tmp = np.eye(7) - L @ C

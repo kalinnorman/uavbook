@@ -24,8 +24,8 @@ from tools.quit_listener import QuitListener
 
 quitter = QuitListener()
 
-VIDEO = False
-DATA_PLOTS = True
+VIDEO = True
+DATA_PLOTS = False
 ANIMATION = True
 SAVE_PLOT_IMAGE = False
 
@@ -33,7 +33,7 @@ SAVE_PLOT_IMAGE = False
 if VIDEO is True:
     from viewers.video_writer import VideoWriter
     video = VideoWriter(video_name="chap11_video.avi",
-                        bounding_box=(0, 0, 1000, 1000),
+                        bounding_box=(70, 80, 820, 820),
                         output_rate=SIM.ts_video)
 
 #initialize the visualization
@@ -56,26 +56,31 @@ path_manager = PathManager()
 # waypoint definition
 from message_types.msg_waypoints import MsgWaypoints
 waypoints = MsgWaypoints()
-#waypoints.type = 'straight_line'
-#waypoints.type = 'fillet'
+# waypoints.type = 'straight_line'
+# waypoints.type = 'fillet'
 waypoints.type = 'dubins'
 Va = PLAN.Va0
 waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
 waypoints.add(np.array([[1000, 0, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
 waypoints.add(np.array([[0, 1000, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
 waypoints.add(np.array([[1000, 1000, -100]]).T, Va, np.radians(-135), np.inf, 0, 0)
+# waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
+# waypoints.add(np.array([[500, 0, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
+# waypoints.add(np.array([[0, 500, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
+# waypoints.add(np.array([[500, 500, -100]]).T, Va, np.radians(-135), np.inf, 0, 0)
 
 # initialize the simulation time
 sim_time = SIM.start_time
-end_time = 200
+end_time = 150
 
 # main simulation loop
 print("Press 'Esc' to exit...")
 while sim_time < end_time:
+    # print(sim_time, '/', end_time)
     # -------observer-------------
     measurements = mav.sensors()  # get sensor measurements
     estimated_state = observer.update(measurements)  # estimate states from measurements
-    # estimated_state = mav.true_state  # uses true states in the control
+    estimated_state = mav.true_state  # uses true states in the control
 
     # -------path manager-------------
     path = path_manager.update(waypoints, PLAN.R_min, estimated_state)
@@ -92,6 +97,7 @@ while sim_time < end_time:
 
     # -------update viewer-------------
     if ANIMATION:
+    # if ANIMATION and int(sim_time) % 20 == 0:
         waypoint_view.update(mav.true_state, path, waypoints)  # plot path and MAV
     if DATA_PLOTS:
         plot_time = sim_time
@@ -101,6 +107,9 @@ while sim_time < end_time:
                          delta)  # inputs to aircraft
     if ANIMATION or DATA_PLOTS:
         app.processEvents()
+    
+    if VIDEO is True:
+        video.update(sim_time)
 
     # -------Check to Quit the Loop-------
     if quitter.check_quit():
