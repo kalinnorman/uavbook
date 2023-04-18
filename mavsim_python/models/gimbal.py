@@ -26,9 +26,12 @@ class Gimbal:
     def pointAtPosition(self, mav, target_position):
         ###### TODO #######
         # line-of-sight vector in the inertial frame
+        p_mav = np.array([[mav.north], [mav.east], [-mav.altitude]])
+        
+        ell_inertial_desired = target_position - p_mav
         
         # rotate line-of-sight vector into body frame and normalize
-        ell = np.array([[0],[0],[0]])
+        ell = (Euler2Rotation(mav.phi, mav.theta, mav.psi).T @ ell_inertial_desired) / np.linalg.norm(ell_inertial_desired)
         return( self.pointAlongVector(ell, mav.camera_az, mav.camera_el) )
 
     def pointAlongVector(self, ell, azimuth, elevation):
@@ -38,10 +41,23 @@ class Gimbal:
 
         ##### TODO #####
         # compute control inputs to align gimbal
+        alpha_az_commanded = np.arctan2(ell.item(1), ell.item(0))
+        alpha_el_commanded = -np.arcsin(ell.item(2))
+        # alpha_el_commanded = 1
+        
+        
+        # print('alpha_az_commanded = ', np.degrees(alpha_az_commanded))
+        # print('az_commanded = ', alpha_az_commanded)
+        # print('azimuth = ', np.degrees(azimuth))
+        # print('alpha_el_commanded = ', np.degrees(alpha_el_commanded))
+        # print('el_commanded = ', alpha_el_commanded)
+        # print('elevation = ', np.degrees(elevation))
+        # print('az_err', alpha_az_commanded - azimuth)
+        # print('el_err', alpha_el_commanded - elevation)
         
         # proportional control for gimbal
-        u_az = 0
-        u_el = 0
+        u_az = CAM.k_az * (alpha_az_commanded - azimuth)
+        u_el = CAM.k_el * (alpha_el_commanded - elevation)
         return( np.array([[u_az], [u_el]]) )
 
 

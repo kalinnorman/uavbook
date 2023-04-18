@@ -19,8 +19,8 @@ class RRTStraightLine:
 
     def update(self, start_pose, end_pose, Va, world_map, radius):
         tree = MsgWaypoints()
-        # tree.type = 'straight_line'
-        tree.type = 'fillet'
+        tree.type = 'straight_line'
+        # tree.type = 'fillet'
 
         ###### TODO ######
         # add the start pose to the tree

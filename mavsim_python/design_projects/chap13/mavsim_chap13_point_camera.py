@@ -33,9 +33,9 @@ quitter = QuitListener()
 VIDEO = False
 DATA_PLOTS = False
 ANIMATION = True
-PLANNING_VIEWER = True
-GEO_PLOTS = True
-CAMERA_VIEW = True
+PLANNING_VIEWER = False
+GEO_PLOTS = False
+CAMERA_VIEW = False
 
 # video initialization
 if VIDEO is True:
@@ -69,7 +69,7 @@ autopilot = Autopilot(SIM.ts_simulation)
 observer = Observer(SIM.ts_simulation)
 path_follower = PathFollower()
 path_manager = PathManager()
-path_planner = PathPlanner(app)
+path_planner = PathPlanner(app, 'rrt_straight')
 
 # initialize the simulation time
 sim_time = SIM.start_time
