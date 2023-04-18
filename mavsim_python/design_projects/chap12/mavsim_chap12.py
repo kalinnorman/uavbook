@@ -27,7 +27,7 @@ quitter = QuitListener()
 VIDEO = False
 DATA_PLOTS = False
 ANIMATION = True
-PLANNING_VIEWER = True
+PLANNING_VIEWER = False
 
 # video initialization
 if VIDEO is True:
@@ -52,9 +52,9 @@ autopilot = Autopilot(SIM.ts_simulation)
 observer = Observer(SIM.ts_simulation)
 path_follower = PathFollower()
 path_manager = PathManager()
-planner_flag = 'simple_straight'  # return simple waypoint path
+# planner_flag = 'simple_straight'  # return simple waypoint path
 # planner_flag = 'simple_dubins'  # return simple dubins waypoint path
-# planner_flag = 'rrt_straight'  # plan path through city using straight-line RRT
+planner_flag = 'rrt_straight'  # plan path through city using straight-line RRT
 # planner_flag = 'rrt_dubins'  # plan path through city using dubins RRT
 path_planner = PathPlanner(app=app, planner_flag=planner_flag, show_planner=PLANNING_VIEWER)
 world_map = MsgWorldMap()
@@ -70,10 +70,11 @@ while sim_time < SIM.end_time:
     measurements = mav.sensors()  # get sensor measurements
     estimated_state = observer.update(measurements)  # estimate states from measurements
     # Observer occasionally gives bad results, true states always work.
-    #estimated_state = mav.true_state
+    estimated_state = mav.true_state
     # -------path planner - ----
     if path_manager.manager_requests_waypoints is True:
         waypoints = path_planner.update(world_map, estimated_state, PLAN.R_min)
+        path_manager.manager_requests_waypoints = False
 
     # -------path manager-------------
     path = path_manager.update(waypoints, PLAN.R_min, estimated_state)

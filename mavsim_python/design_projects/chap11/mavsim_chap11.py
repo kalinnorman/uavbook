@@ -24,7 +24,7 @@ from tools.quit_listener import QuitListener
 
 quitter = QuitListener()
 
-VIDEO = True
+VIDEO = False
 DATA_PLOTS = False
 ANIMATION = True
 SAVE_PLOT_IMAGE = False
@@ -57,8 +57,8 @@ path_manager = PathManager()
 from message_types.msg_waypoints import MsgWaypoints
 waypoints = MsgWaypoints()
 # waypoints.type = 'straight_line'
-# waypoints.type = 'fillet'
-waypoints.type = 'dubins'
+waypoints.type = 'fillet'
+# waypoints.type = 'dubins'
 Va = PLAN.Va0
 waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
 waypoints.add(np.array([[1000, 0, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
