@@ -118,6 +118,7 @@ class MavDynamics:
 
         # position dynamics
         u_dot = r*v - q*w + fx/MAV.mass
+        print(u_dot)
         v_dot = p*w - r*u + fy/MAV.mass
         w_dot = q*u - p*v + fz/MAV.mass
 

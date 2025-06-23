@@ -1,0 +1,4 @@
+From what I can tell, everything in the low pass filter stuff, and the Attitude EKF appears to be working fairly well.
+However, the Position EKF is definitely a little wonky. Some of the values, like phi and chi, seem to track alright (though still far from perfect).
+While other values, like Vg, hardly seem to track at all. 
+I've reached the limit of the amount of time that I can afford to spend on this assignment, so I'm just submitting what I have. 

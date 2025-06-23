@@ -19,13 +19,15 @@ class MsgState:
         self.phi = 0.     # roll angle in radians
         self.theta = 0.   # pitch angle in radians
         self.psi = 0.     # yaw angle in radians
-        self.Va = 25.      # airspeed in meters/sec
+        # self.Va = 25.      # airspeed in meters/sec
+        self.Va = 0.
         self.alpha = 0.   # angle of attack in radians
         self.beta = 0.    # sideslip angle in radians
         self.p = 0.       # roll rate in radians/sec
         self.q = 0.       # pitch rate in radians/sec
         self.r = 0.       # yaw rate in radians/sec
-        self.Vg = 25.      # groundspeed in meters/sec
+        # self.Vg = 25.      # groundspeed in meters/sec
+        self.Vg = 0.
         self.gamma = 0.   # flight path angle in radians
         self.chi = 0.     # course angle in radians
         self.wn = 0.      # inertial windspeed in north direction in meters/sec
